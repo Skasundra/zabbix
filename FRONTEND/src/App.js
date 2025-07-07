@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { Box, CssBaseline, ThemeProvider, createTheme, useMediaQuery } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import Dashboard from './components/Dashboard';
 import HostPage from './components/HostPage';
 import Sidebar from './components/Sidebar';
@@ -100,14 +101,24 @@ const createAppTheme = (mode) =>
 const App = () => {
   const [mode, setMode] = useState('dark');
   const theme = createAppTheme(mode);
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleDrawerOpen = () => setDrawerOpen(true);
+  const handleDrawerClose = () => setDrawerOpen(false);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-          <Header />
-          <Sidebar />
+          <Header onMenuClick={isMobile ? handleDrawerOpen : undefined} />
+          <Sidebar
+            open={isMobile ? drawerOpen : true}
+            onClose={handleDrawerClose}
+            variant={isMobile ? 'temporary' : 'permanent'}
+          />
           <Box
             component="main"
             sx={{

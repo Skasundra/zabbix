@@ -92,6 +92,7 @@ const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   marginTop: theme.spacing(3),
   border: '1px solid rgba(148, 163, 184, 0.1)',
   width: '100%',
+  overflowX: 'auto',
 }));
 
 const StyledTableHead = styled(TableHead)(({ theme }) => ({
@@ -252,7 +253,7 @@ const Dashboard = () => {
         <HeaderCard>
           <CardContent sx={{ textAlign: 'center', py: 4 }}>
             <CircularProgress size={60} sx={{ color: theme.palette.primary.contrastText, mb: 2 }} />
-            <Typography variant="h5">Loading Zabbix Dashboard...</Typography>
+            <Typography variant="h5">Loading HostSniper Surveillance Dashboard...</Typography>
           </CardContent>
         </HeaderCard>
         <StatsGridContainer>

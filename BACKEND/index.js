@@ -14,7 +14,8 @@ app.use(express.json());
 // Centralized axios instance for Zabbix API
 const zabbixApi = axios.create({
     baseURL: ZABBIX_API_URL,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 30000 // Set timeout to 30 seconds
 });
 
 // Error handling middleware
@@ -207,8 +208,8 @@ app.post('/api/zabbix/memory-utilization-latest', apiRoute(async (authToken, req
         output: 'extend',
         itemids: [itemid],
         history: 0, // Float data type for memory utilization
-        time_from: currentTime - 60, // 60-second window
-        time_till: currentTime,
+        // time_from: currentTime - 60, // 60-second window
+        // time_till: currentTime,
         limit: 1,
         sortfield: 'clock',
         sortorder: 'DESC'
@@ -240,7 +241,7 @@ app.post('/api/zabbix/disk-utilization-latest', apiRoute(async (authToken, req) 
         history: 0, // Float data type for disk utilization
         // // time_from: currentTime - 60, // 60-second window
         // // time_till: currentTime,
-        // limit: 1,
+        limit: 1,
         sortfield: 'clock',
         sortorder: 'DESC'
     });

@@ -35,6 +35,7 @@ import {
   Info,
 } from '@mui/icons-material';
 import { styled, alpha } from '@mui/material/styles';
+import  logo  from "../Asset/HostSniperSurveillance.png"
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -201,6 +202,7 @@ const Header = () => {
             >
               HostSniper Surveillance
             </Typography>
+          {/* <img src={logo} style={{ width : "250px", height: "80px" }}></img> */}
 
           </Box>
         </Box>
