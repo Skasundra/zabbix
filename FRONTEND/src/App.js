@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import HostPage from './components/HostPage';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import HostDashboard from './components/HostDashboard';
 
 const createAppTheme = (mode) =>
   createTheme({
@@ -133,6 +134,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/host/:hostid" element={<HostPage />} />
+              <Route path="/host-dashboard" element={<HostDashboard />} />
             </Routes>
           </Box>
         </Box>

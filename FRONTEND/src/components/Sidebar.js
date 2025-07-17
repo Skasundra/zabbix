@@ -29,12 +29,14 @@ import {
     Brightness4,
     Brightness7,
 } from '@mui/icons-material';
+import WebIcon from '@mui/icons-material/Web';
 import { styled } from '@mui/material/styles';
 
 const drawerWidth = 280;
 
 const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/', badge: null },
+    { text: 'Host ', icon: <WebIcon />, path: '/host-dashboard', badge: null },
 ];
 
 const alertSubmenu = [
