@@ -1064,7 +1064,7 @@ const HostPage = () => {
                 {/* <ActionButton onClick={fetchLatestHostEvent}>
                   Test Event
                 </ActionButton> */}
-                {/* <ActionButton onClick={handleOpenModal}>Create Trigger</ActionButton> */}
+                <ActionButton onClick={handleOpenModal}>Create Trigger</ActionButton>
               </Box>
             </CardContent>
           </HeaderCard>

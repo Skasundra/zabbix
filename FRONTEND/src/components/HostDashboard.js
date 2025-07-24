@@ -69,7 +69,7 @@ const API_ENDPOINTS = {
 
 const FILTER_OPTIONS = [
   "Yesterday",
-  "Last 2 Days", 
+  "Last 2 Days",
   "Last 7 Days",
   "This Month",
   "Last 3 Months",
@@ -91,7 +91,7 @@ const SEVERITY_THRESHOLDS = {
   DISK: { HIGH: 85, MEDIUM: 70 },
 };
 
-// Dark theme configuration (memoized to prevent recreation)
+// Dark theme configuration
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
@@ -167,9 +167,12 @@ const ProfessionalCard = styled(Card)(({ theme }) => ({
 const StatusChip = styled(Chip)(({ theme, severity }) => {
   const getColor = () => {
     switch (severity) {
-      case "high": return theme.palette.error.main;
-      case "medium": return theme.palette.warning.main;
-      default: return theme.palette.success.main;
+      case "high":
+        return theme.palette.error.main;
+      case "medium":
+        return theme.palette.warning.main;
+      default:
+        return theme.palette.success.main;
     }
   };
 
@@ -187,9 +190,12 @@ const StatusChip = styled(Chip)(({ theme, severity }) => {
 const MetricCard = styled(Paper)(({ theme, severity }) => {
   const getColor = () => {
     switch (severity) {
-      case "high": return theme.palette.error.main;
-      case "medium": return theme.palette.warning.main;
-      default: return theme.palette.success.main;
+      case "high":
+        return theme.palette.error.main;
+      case "medium":
+        return theme.palette.warning.main;
+      default:
+        return theme.palette.success.main;
     }
   };
 
@@ -267,7 +273,8 @@ const isValidDateRange = (dateRange) => {
 };
 
 const getSeverity = (value, type) => {
-  const thresholds = SEVERITY_THRESHOLDS[type.toUpperCase()] || SEVERITY_THRESHOLDS.CPU;
+  const thresholds =
+    SEVERITY_THRESHOLDS[type.toUpperCase()] || SEVERITY_THRESHOLDS.CPU;
   if (value > thresholds.HIGH) return "high";
   if (value > thresholds.MEDIUM) return "medium";
   return "low";
@@ -329,66 +336,70 @@ const useDateRange = (filterType, customDateRange) => {
 };
 
 const useChartOptions = (chartType) => {
-  return useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top",
-        labels: {
-          padding: 16,
-          usePointStyle: true,
-          pointStyle: "circle",
-          font: { family: '"Inter", sans-serif', size: 12, weight: 500 },
-          color: "#cbd5e1",
-        },
-      },
-      tooltip: {
-        mode: "index",
-        intersect: false,
-        backgroundColor: "#1e293b",
-        titleColor: "#f8fafc",
-        bodyColor: "#cbd5e1",
-        borderColor: "#334155",
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 8,
-        displayColors: true,
-        callbacks: {
-          title: (context) => `Time: ${context[0]?.label}`,
-          label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`,
-        },
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        max: chartType === CHART_TYPES.STACKED ? 300 : 100,
-        grid: { color: "#334155", lineWidth: 1 },
-        ticks: {
-          color: "#94a3b8",
-          font: { size: 11 },
-          callback: (value) => value + "%",
-        },
-        border: { display: false },
-        stacked: chartType === CHART_TYPES.STACKED,
-      },
-      x: {
-        grid: { display: false },
-        ticks: {
-          color: "#94a3b8",
-          font: { size: 11 },
-          maxRotation: 45,
-          callback: function (value, index) {
-            return this.getLabelForValue(index) || "";
+  return useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "top",
+          labels: {
+            padding: 16,
+            usePointStyle: true,
+            pointStyle: "circle",
+            font: { family: '"Inter", sans-serif', size: 12, weight: 500 },
+            color: "#cbd5e1",
           },
         },
-        border: { display: false },
-        stacked: chartType === CHART_TYPES.STACKED,
+        tooltip: {
+          mode: "index",
+          intersect: false,
+          backgroundColor: "#1e293b",
+          titleColor: "#f8fafc",
+          bodyColor: "#cbd5e1",
+          borderColor: "#334155",
+          borderWidth: 1,
+          padding: 12,
+          cornerRadius: 8,
+          displayColors: true,
+          callbacks: {
+            title: (context) => `Time: ${context[0]?.label}`,
+            label: (context) =>
+              `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`,
+          },
+        },
       },
-    },
-    interaction: { mode: "index", intersect: false },
-  }), [chartType]);
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: chartType === CHART_TYPES.STACKED ? 300 : 100,
+          grid: { color: "#334155", lineWidth: 1 },
+          ticks: {
+            color: "#94a3b8",
+            font: { size: 11 },
+            callback: (value) => value + "%",
+          },
+          border: { display: false },
+          stacked: chartType === CHART_TYPES.STACKED,
+        },
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: "#94a3b8",
+            font: { size: 11 },
+            maxRotation: 45,
+            callback: function (value, index) {
+              return this.getLabelForValue(index) || "";
+            },
+          },
+          border: { display: false },
+          stacked: chartType === CHART_TYPES.STACKED,
+        },
+      },
+      interaction: { mode: "index", intersect: false },
+    }),
+    [chartType]
+  );
 };
 
 // Component for individual metric display
@@ -399,7 +410,10 @@ const MetricDisplay = React.memo(({ value, trend, label, icon, color }) => (
     </MetricIconWrapper>
     <Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color, lineHeight: 1.2 }}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 700, color, lineHeight: 1.2 }}
+        >
           {value.toFixed(1)}%
         </Typography>
         {trend === "up" ? (
@@ -408,7 +422,11 @@ const MetricDisplay = React.memo(({ value, trend, label, icon, color }) => (
           <ArrowDownIcon sx={{ fontSize: 16, color: "success.main" }} />
         )}
       </Box>
-      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ fontWeight: 500 }}
+      >
         {label}
       </Typography>
     </Box>
@@ -463,113 +481,166 @@ const HostDashboard = () => {
   }, []);
 
   // Get latest statistics for a host
-  const getLatestStats = useCallback((host) => {
-    const isFiltered = filterStatus === "on";
-    
-    const latestCpu = host.cpu.length > 0 ? getValue(host.cpu[host.cpu.length - 1], isFiltered) : 0;
-    const latestMemory = host.memory.length > 0 ? getValue(host.memory[host.memory.length - 1], isFiltered) : 0;
-    const latestDisk = host.disk.length > 0 ? getValue(host.disk[host.disk.length - 1], isFiltered) : 0;
+  const getLatestStats = useCallback(
+    (host) => {
+      const isFiltered = filterStatus === "on";
 
-    const prevCpu = host.cpu.length > 1 ? getValue(host.cpu[host.cpu.length - 2], isFiltered) : 0;
-    const prevMemory = host.memory.length > 1 ? getValue(host.memory[host.memory.length - 2], isFiltered) : 0;
-    const prevDisk = host.disk.length > 1 ? getValue(host.disk[host.disk.length - 2], isFiltered) : 0;
+      const latestCpu =
+        host.cpu.length > 0
+          ? getValue(host.cpu[host.cpu.length - 1], isFiltered)
+          : 0;
+      const latestMemory =
+        host.memory.length > 0
+          ? getValue(host.memory[host.memory.length - 1], isFiltered)
+          : 0;
+      const latestDisk =
+        host.disk.length > 0
+          ? getValue(host.disk[host.disk.length - 1], isFiltered)
+          : 0;
 
-    return {
-      latestCpu,
-      latestMemory,
-      latestDisk,
-      cpuTrend: latestCpu >= prevCpu ? "up" : "down",
-      memoryTrend: latestMemory >= prevMemory ? "up" : "down",
-      diskTrend: latestDisk >= prevDisk ? "up" : "down",
-    };
-  }, [filterStatus]);
+      const prevCpu =
+        host.cpu.length > 1
+          ? getValue(host.cpu[host.cpu.length - 2], isFiltered)
+          : 0;
+      const prevMemory =
+        host.memory.length > 1
+          ? getValue(host.memory[host.memory.length - 2], isFiltered)
+          : 0;
+      const prevDisk =
+        host.disk.length > 1
+          ? getValue(host.disk[host.disk.length - 2], isFiltered)
+          : 0;
+
+      return {
+        latestCpu,
+        latestMemory,
+        latestDisk,
+        cpuTrend: latestCpu >= prevCpu ? "up" : "down",
+        memoryTrend: latestMemory >= prevMemory ? "up" : "down",
+        diskTrend: latestDisk >= prevDisk ? "up" : "down",
+      };
+    },
+    [filterStatus]
+  );
 
   // Generate chart data
-  const getChartData = useCallback((host) => {
-    const isFiltered = filterStatus === "on";
-    const dataLength = Math.max(host.cpu.length, host.memory.length, host.disk.length);
-    const sliceLength = isFiltered ? dataLength : 20;
+  const getChartData = useCallback(
+    (host) => {
+      const isFiltered = filterStatus === "on";
+      const dataLength = Math.max(
+        host.cpu.length,
+        host.memory.length,
+        host.disk.length
+      );
+      const sliceLength = isFiltered ? dataLength : 20;
 
-    const primaryDataArray = 
-      host.cpu.length >= host.memory.length && host.cpu.length >= host.disk.length
-        ? host.cpu : host.memory.length >= host.disk.length ? host.memory : host.disk;
+      const primaryDataArray =
+        host.cpu.length >= host.memory.length &&
+        host.cpu.length >= host.disk.length
+          ? host.cpu
+          : host.memory.length >= host.disk.length
+          ? host.memory
+          : host.disk;
 
-    const slicedDataArray = primaryDataArray.slice(-sliceLength);
-    const actualDataLength = slicedDataArray.length;
-    const dynamicLabels = generateDynamicLabels(slicedDataArray, actualDataLength);
+      const slicedDataArray = primaryDataArray.slice(-sliceLength);
+      const actualDataLength = slicedDataArray.length;
+      const dynamicLabels = generateDynamicLabels(
+        slicedDataArray,
+        actualDataLength
+      );
 
-    const isStacked = chartType === CHART_TYPES.STACKED;
-    const isCombo = chartType === CHART_TYPES.COMBO;
+      const isStacked = chartType === CHART_TYPES.STACKED;
+      const isCombo = chartType === CHART_TYPES.COMBO;
 
-    return {
-      labels: dynamicLabels,
-      datasets: [
-        {
-          label: "CPU Usage",
-          data: host.cpu.map((data) => getValue(data, isFiltered)).slice(-sliceLength),
-          backgroundColor: isCombo ? "rgba(59, 130, 246, 0.5)" : "#3b82f6",
-          borderColor: "#1e40af",
-          borderWidth: isCombo ? 2 : 1,
-          type: isCombo ? "line" : chartType === CHART_TYPES.LINE ? "line" : "bar",
-          fill: isCombo,
-          tension: isCombo ? 0.4 : 0,
-          pointRadius: isCombo ? 3 : 0,
-          pointHoverRadius: isCombo ? 6 : 0,
-          pointBackgroundColor: isCombo ? "#3b82f6" : undefined,
-          pointBorderColor: isCombo ? "#1e293b" : undefined,
-          pointBorderWidth: isCombo ? 2 : 0,
-          stack: isStacked ? "stack" : undefined,
-          order: isCombo ? 0 : 1,
-        },
-        {
-          label: "Memory Usage",
-          data: host.memory.map((data) => getValue(data, isFiltered)).slice(-sliceLength),
-          backgroundColor: isCombo ? "rgba(139, 92, 246, 0.5)" : "#8b5cf6",
-          borderColor: "#7c3aed",
-          borderWidth: isCombo ? 2 : 1,
-          type: isCombo ? "line" : chartType === CHART_TYPES.LINE ? "line" : "bar",
-          fill: isCombo,
-          tension: isCombo ? 0.4 : 0,
-          pointRadius: isCombo ? 3 : 0,
-          pointHoverRadius: isCombo ? 6 : 0,
-          pointBackgroundColor: isCombo ? "#8b5cf6" : undefined,
-          pointBorderColor: isCombo ? "#1e293b" : undefined,
-          pointBorderWidth: isCombo ? 2 : 0,
-          stack: isStacked ? "stack" : undefined,
-          order: isCombo ? 0 : 1,
-        },
-        {
-          label: "Disk Usage",
-          data: host.disk.map((data) => getValue(data, isFiltered)).slice(-sliceLength),
-          backgroundColor: isCombo ? "#10b981" : "#10b981",
-          borderColor: "#059669",
-          borderWidth: 1,
-          type: chartType === CHART_TYPES.LINE ? "line" : "bar",
-          fill: false,
-          tension: chartType === CHART_TYPES.LINE ? 0.4 : 0,
-          pointRadius: chartType === CHART_TYPES.LINE ? 3 : 0,
-          pointHoverRadius: chartType === CHART_TYPES.LINE ? 6 : 0,
-          pointBackgroundColor: chartType === CHART_TYPES.LINE ? "#10b981" : undefined,
-          pointBorderColor: chartType === CHART_TYPES.LINE ? "#1e293b" : undefined,
-          pointBorderWidth: chartType === CHART_TYPES.LINE ? 2 : 0,
-          stack: isStacked ? "stack" : undefined,
-          order: 1,
-        },
-      ],
-    };
-  }, [chartType, filterStatus, generateDynamicLabels]);
+      return {
+        labels: dynamicLabels,
+        datasets: [
+          {
+            label: "CPU Usage",
+            data: host.cpu
+              .map((data) => getValue(data, isFiltered))
+              .slice(-sliceLength),
+            backgroundColor: isCombo ? "rgba(59, 130, 246, 0.5)" : "#3b82f6",
+            borderColor: "#1e40af",
+            borderWidth: isCombo ? 2 : 1,
+            type: isCombo
+              ? "line"
+              : chartType === CHART_TYPES.LINE
+              ? "line"
+              : "bar",
+            fill: isCombo,
+            tension: isCombo ? 0.4 : 0,
+            pointRadius: isCombo ? 3 : 0,
+            pointHoverRadius: isCombo ? 6 : 0,
+            pointBackgroundColor: isCombo ? "#3b82f6" : undefined,
+            pointBorderColor: isCombo ? "#1e293b" : undefined,
+            pointBorderWidth: isCombo ? 2 : 0,
+            stack: isStacked ? "stack" : undefined,
+            order: isCombo ? 0 : 1,
+          },
+          {
+            label: "Memory Usage",
+            data: host.memory
+              .map((data) => getValue(data, isFiltered))
+              .slice(-sliceLength),
+            backgroundColor: isCombo ? "rgba(139, 92, 246, 0.5)" : "#8b5cf6",
+            borderColor: "#7c3aed",
+            borderWidth: isCombo ? 2 : 1,
+            type: isCombo
+              ? "line"
+              : chartType === CHART_TYPES.LINE
+              ? "line"
+              : "bar",
+            fill: isCombo,
+            tension: isCombo ? 0.4 : 0,
+            pointRadius: isCombo ? 3 : 0,
+            pointHoverRadius: isCombo ? 6 : 0,
+            pointBackgroundColor: isCombo ? "#8b5cf6" : undefined,
+            pointBorderColor: isCombo ? "#1e293b" : undefined,
+            pointBorderWidth: isCombo ? 2 : 0,
+            stack: isStacked ? "stack" : undefined,
+            order: isCombo ? 0 : 1,
+          },
+          {
+            label: "Disk Usage",
+            data: host.disk
+              .map((data) => getValue(data, isFiltered))
+              .slice(-sliceLength),
+            backgroundColor: isCombo ? "#10b981" : "#10b981",
+            borderColor: "#059669",
+            borderWidth: 1,
+            type: chartType === CHART_TYPES.LINE ? "line" : "bar",
+            fill: false,
+            tension: chartType === CHART_TYPES.LINE ? 0.4 : 0,
+            pointRadius: chartType === CHART_TYPES.LINE ? 3 : 0,
+            pointHoverRadius: chartType === CHART_TYPES.LINE ? 6 : 0,
+            pointBackgroundColor:
+              chartType === CHART_TYPES.LINE ? "#10b981" : undefined,
+            pointBorderColor:
+              chartType === CHART_TYPES.LINE ? "#1e293b" : undefined,
+            pointBorderWidth: chartType === CHART_TYPES.LINE ? 2 : 0,
+            stack: isStacked ? "stack" : undefined,
+            order: 1,
+          },
+        ],
+      };
+    },
+    [chartType, filterStatus, generateDynamicLabels]
+  );
 
   // API functions
   const fetchUtilizations = useCallback(async () => {
     try {
       if (!loading) setChartLoading(true);
-      
+
       const payload = { filterStatus };
       let apiEndpoint;
 
       if (filterStatus === "on") {
         if (filterType === "Custom" && !dateRange) {
-          console.log("Invalid date range for custom filter, skipping API call");
+          console.log(
+            "Invalid date range for custom filter, skipping API call"
+          );
           setChartLoading(false);
           return;
         }
@@ -584,18 +655,45 @@ const HostDashboard = () => {
 
       const response = await axios.post(apiEndpoint, payload);
 
+      console.log("response----------->", response);
+      
+      // Check if response.data contains an error
+      if (response.data.error) {
+        setError(response.data.error);
+        setHostsData([]);
+        setLoading(false);
+        setChartLoading(false);
+        return;
+      }
+
+      // Process successful response
       const reversedData = response.data.map((host) => ({
         ...host,
-        cpu: filterStatus === "off" ? host.cpu.reverse().slice(0, 20) : host.cpu.reverse(),
-        memory: filterStatus === "off" ? host.memory.reverse().slice(0, 20) : host.memory.reverse(),
-        disk: filterStatus === "off" ? host.disk.reverse().slice(0, 20) : host.disk.reverse(),
+        cpu:
+          filterStatus === "off"
+            ? host.cpu.reverse().slice(0, 20)
+            : host.cpu.reverse(),
+        memory:
+          filterStatus === "off"
+            ? host.memory.reverse().slice(0, 20)
+            : host.memory.reverse(),
+        disk:
+          filterStatus === "off"
+            ? host.disk.reverse().slice(0, 20)
+            : host.disk.reverse(),
       }));
 
       setHostsData(reversedData);
+      setError(null); // Clear any previous errors
       setLoading(false);
       setChartLoading(false);
     } catch (err) {
-      setError("Failed to fetch host utilization data");
+      console.log("err-------------->", err);
+      setError(
+        err.response?.data?.error ||
+        "Failed to fetch host utilization data"
+      );
+      setHostsData([]);
       setLoading(false);
       setChartLoading(false);
       console.error("Error fetching utilizations:", err);
@@ -607,23 +705,42 @@ const HostDashboard = () => {
       setRefreshing(true);
       const response = await axios.post(API_ENDPOINTS.LATEST, {});
 
+      // Check if response.data contains an error
+      if (response.data.error) {
+        setError(response.data.error);
+        setRefreshing(false);
+        return;
+      }
+
       setHostsData((prevData) => {
         return response.data.map((newHost) => {
-          const existingHost = prevData.find((h) => h.hostid === newHost.hostid) || {
-            cpu: [], memory: [], disk: [], hostname: newHost.hostname, hostid: newHost.hostid,
+          const existingHost = prevData.find(
+            (h) => h.hostid === newHost.hostid
+          ) || {
+            cpu: [],
+            memory: [],
+            disk: [],
+            hostname: newHost.hostname,
+            hostid: newHost.hostid,
           };
 
           return {
             ...newHost,
             cpu: [...existingHost.cpu, ...(newHost.cpu || [])].slice(-20),
-            memory: [...existingHost.memory, ...(newHost.memory || [])].slice(-20),
+            memory: [...existingHost.memory, ...(newHost.memory || [])].slice(
+              -20
+            ),
             disk: [...existingHost.disk, ...(newHost.disk || [])].slice(-20),
           };
         });
       });
+      setError(null); // Clear any previous errors
       setRefreshing(false);
     } catch (err) {
-      setError("Failed to fetch latest host utilization data");
+      setError(
+        err.response?.data?.error ||
+        "Failed to fetch latest host utilization data"
+      );
       setRefreshing(false);
       console.error("Error fetching latest utilizations:", err);
     }
@@ -667,22 +784,48 @@ const HostDashboard = () => {
   }, [fetchUtilizations, fetchLatestUtilizations, filterStatus]);
 
   // Memoized computed values
-  const validHosts = useMemo(() => hostsData.filter((host) => !host.error), [hostsData]);
-  const isApplyDisabled = filterType === "Custom" && !isValidDateRange(customDateRange);
+  const validHosts = useMemo(
+    () => hostsData.filter((host) => !host.error),
+    [hostsData]
+  );
+  const isApplyDisabled =
+    filterType === "Custom" && !isValidDateRange(customDateRange);
 
   return (
     <ThemeProvider theme={darkTheme}>
-      <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", color: "text.primary", padding: { xs: 2, md: 3 } }}>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          backgroundColor: "background.default",
+          color: "text.primary",
+          padding: { xs: 2, md: 3 },
+        }}
+      >
         <Container maxWidth="xl">
           <DashboardHeader>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar sx={{ bgcolor: "primary.main", width: 56, height: 56, background: "linear-gradient(135deg, #3b82f6, #8b5cf6)" }}>
+                <Avatar
+                  sx={{
+                    bgcolor: "primary.main",
+                    width: 56,
+                    height: 56,
+                    background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                  }}
+                >
                   <DashboardIcon sx={{ fontSize: 28 }} />
                 </Avatar>
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                    System Monitor
+                    HostSniper Surveillance
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Real-time system performance analytics
@@ -691,19 +834,39 @@ const HostDashboard = () => {
               </Box>
 
               <Stack direction="row" spacing={2} alignItems="center">
-                <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
+                <FormControl
+                  variant="outlined"
+                  size="small"
+                  sx={{ minWidth: 120 }}
+                >
                   <InputLabel>Chart Type</InputLabel>
-                  <Select value={chartType} onChange={handleChartTypeChange} label="Chart Type">
+                  <Select
+                    value={chartType}
+                    onChange={handleChartTypeChange}
+                    label="Chart Type"
+                  >
                     <MenuItem value={CHART_TYPES.LINE}>Line</MenuItem>
                     <MenuItem value={CHART_TYPES.BAR}>Bar</MenuItem>
-                    <MenuItem value={CHART_TYPES.COMBO}>Combo Bar/Line</MenuItem>
-                    <MenuItem value={CHART_TYPES.STACKED}>Stacked Bar/Line</MenuItem>
+                    <MenuItem value={CHART_TYPES.COMBO}>
+                      Combo Bar/Line
+                    </MenuItem>
+                    <MenuItem value={CHART_TYPES.STACKED}>
+                      Stacked Bar/Line
+                    </MenuItem>
                   </Select>
                 </FormControl>
 
-                <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
+                <FormControl
+                  variant="outlined"
+                  size="small"
+                  sx={{ minWidth: 120 }}
+                >
                   <InputLabel>Filter Status</InputLabel>
-                  <Select value={filterStatus} onChange={handleFilterStatusChange} label="Filter Status">
+                  <Select
+                    value={filterStatus}
+                    onChange={handleFilterStatusChange}
+                    label="Filter Status"
+                  >
                     <MenuItem value="off">Off</MenuItem>
                     <MenuItem value="on">On</MenuItem>
                   </Select>
@@ -711,11 +874,21 @@ const HostDashboard = () => {
 
                 {filterStatus === "on" && (
                   <>
-                    <FormControl variant="outlined" size="small" sx={{ minWidth: 150 }}>
+                    <FormControl
+                      variant="outlined"
+                      size="small"
+                      sx={{ minWidth: 150 }}
+                    >
                       <InputLabel>Filter Type</InputLabel>
-                      <Select value={filterType} onChange={handleFilterTypeChange} label="Filter Type">
+                      <Select
+                        value={filterType}
+                        onChange={handleFilterTypeChange}
+                        label="Filter Type"
+                      >
                         {FILTER_OPTIONS.map((option) => (
-                          <MenuItem key={option} value={option}>{option}</MenuItem>
+                          <MenuItem key={option} value={option}>
+                            {option}
+                          </MenuItem>
                         ))}
                       </Select>
                     </FormControl>
@@ -747,15 +920,25 @@ const HostDashboard = () => {
             <Divider sx={{ my: 2 }} />
 
             <Typography variant="body2" color="text.secondary">
-              Last updated: {new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
+              Last updated:{" "}
+              {new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}
               {filterStatus === "on" && ` • Filter: ${filterType}`}
-              {filterType === "Custom" && isValidDateRange(customDateRange) && 
+              {filterType === "Custom" &&
+                isValidDateRange(customDateRange) &&
                 ` (${customDateRange[0].toLocaleDateString()} - ${customDateRange[1].toLocaleDateString()})`}
             </Typography>
           </DashboardHeader>
 
           {loading && (
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "60vh",
+              }}
+            >
               <CircularProgress size={56} thickness={3} sx={{ mb: 3 }} />
               <Typography variant="h6" sx={{ fontWeight: 500 }}>
                 Loading System Monitor data...
@@ -781,33 +964,92 @@ const HostDashboard = () => {
             </Alert>
           )}
 
-          {!loading && (
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3, maxWidth: "1400px", mx: "auto" }}>
+          {!loading && !error && validHosts.length === 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "60vh",
+              }}
+            >
+              <WarningIcon
+                sx={{
+                  fontSize: 48,
+                  color: "warning.main",
+                  mb: 2,
+                  opacity: 0.7,
+                }}
+              />
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 600, color: "warning.main" }}
+              >
+                No Hosts Available
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                No host data found for the selected period
+              </Typography>
+            </Box>
+          )}
+
+          {!loading && !error && validHosts.length > 0 && (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 3,
+                maxWidth: "1400px",
+                mx: "auto",
+              }}
+            >
               {validHosts.map((host, index) => {
                 const stats = getLatestStats(host);
-                const maxUsage = Math.max(stats.latestCpu, stats.latestMemory, stats.latestDisk);
+                const maxUsage = Math.max(
+                  stats.latestCpu,
+                  stats.latestMemory,
+                  stats.latestDisk
+                );
                 const overallSeverity = getSeverity(maxUsage, "cpu");
 
                 return (
                   <ProfessionalCard key={host.hostid}>
                     <Box sx={{ p: 3, pb: 2 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                          <Avatar sx={{
-                            bgcolor: "transparent",
-                            border: "2px solid",
-                            borderColor: "primary.main",
-                            color: "primary.main",
-                            width: 44,
-                            height: 44,
-                          }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          mb: 2,
+                        }}
+                      >
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <Avatar
+                            sx={{
+                              bgcolor: "transparent",
+                              border: "2px solid",
+                              borderColor: "primary.main",
+                              color: "primary.main",
+                              width: 44,
+                              height: 44,
+                            }}
+                          >
                             <ComputerIcon fontSize="medium" />
                           </Avatar>
                           <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                            <Typography
+                              variant="h6"
+                              sx={{ fontWeight: 600, mb: 0.5 }}
+                            >
                               {host.hostname}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               Host ID: {host.hostid} • Position: {index + 1}
                             </Typography>
                           </Box>
@@ -820,56 +1062,90 @@ const HostDashboard = () => {
                       </Box>
                     </Box>
 
-                    <CardContent sx={{ flexGrow: 1, pt: 0, pb: 2, position: "relative" }}>
+                    <CardContent
+                      sx={{ flexGrow: 1, pt: 0, pb: 2, position: "relative" }}
+                    >
                       {chartLoading && (
-                        <Box sx={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: "rgba(0, 0, 0, 0.5)",
-                          zIndex: 1,
-                        }}>
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            zIndex: 1,
+                          }}
+                        >
                           <CircularProgress size={32} thickness={4} />
                         </Box>
                       )}
 
-                      {host.cpu.length > 0 || host.memory.length > 0 || host.disk.length > 0 ? (
+                      {host.cpu.length > 0 ||
+                      host.memory.length > 0 ||
+                      host.disk.length > 0 ? (
                         <Box sx={{ height: 280, width: "100%" }}>
                           {chartType === CHART_TYPES.LINE ? (
-                            <Line data={getChartData(host)} options={chartOptions} />
+                            <Line
+                              data={getChartData(host)}
+                              options={chartOptions}
+                            />
                           ) : (
-                            <Bar data={getChartData(host)} options={chartOptions} />
+                            <Bar
+                              data={getChartData(host)}
+                              options={chartOptions}
+                            />
                           )}
                         </Box>
                       ) : (
-                        <Box sx={{
-                          height: 280,
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: "background.default",
-                          borderRadius: 2,
-                          border: `1px dashed ${darkTheme.palette.divider}`,
-                        }}>
-                          <WarningIcon sx={{ fontSize: 48, color: "warning.main", mb: 2, opacity: 0.7 }} />
-                          <Typography variant="h6" sx={{ fontWeight: 600, color: "warning.main" }}>
+                        <Box
+                          sx={{
+                            height: 280,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "background.default",
+                            borderRadius: 2,
+                            border: `1px dashed ${darkTheme.palette.divider}`,
+                          }}
+                        >
+                          <WarningIcon
+                            sx={{
+                              fontSize: 48,
+                              color: "warning.main",
+                              mb: 2,
+                              opacity: 0.7,
+                            }}
+                          />
+                          <Typography
+                            variant="h6"
+                            sx={{ fontWeight: 600, color: "warning.main" }}
+                          >
                             No Data Available
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 1 }}
+                          >
                             Waiting for metrics to be collected
                           </Typography>
                         </Box>
                       )}
                     </CardContent>
 
-                    <Box sx={{ p: 2, pt: 1, backgroundColor: "background.paper" }}>
-                      <Grid container spacing={1.5} sx={{ justifyContent: "space-between" }}>
+                    <Box
+                      sx={{ p: 2, pt: 1, backgroundColor: "background.paper" }}
+                    >
+                      <Grid
+                        container
+                        spacing={1.5}
+                        sx={{ justifyContent: "space-between" }}
+                      >
                         <Grid item xs={4}>
                           <MetricDisplay
                             value={stats.latestCpu}

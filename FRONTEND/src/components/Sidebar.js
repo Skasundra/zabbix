@@ -35,8 +35,9 @@ import { styled } from '@mui/material/styles';
 const drawerWidth = 280;
 
 const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/', badge: null },
-    { text: 'Host ', icon: <WebIcon />, path: '/host-dashboard', badge: null },
+    { text: 'Dashboard ', icon: <WebIcon />, path: '/', badge: null },
+    { text: 'Host', icon: <DashboardIcon />, path: '/host-dashboard', badge: null },
+    { text: 'Host Config ', icon: <WebIcon />, path: '/host-detail', badge: null },
 ];
 
 const alertSubmenu = [

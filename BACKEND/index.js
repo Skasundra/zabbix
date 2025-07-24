@@ -14,10 +14,32 @@ app.use(cors());
 app.use(express.json());
 
 // Centralized axios instance for Zabbix API
+// const zabbixApi = axios.create({
+//   baseURL: ZABBIX_API_URL,
+//   headers: { "Content-Type": "application/json" },
+//   timeout: 80000, // Set timeout to 30 seconds
+// });
+
+
+
+// Centralized axios instance for Zabbix API with improved configuration
 const zabbixApi = axios.create({
-  baseURL: ZABBIX_API_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000, // Set timeout to 30 seconds
+  baseURL: process.env.ZABBIX_API_URL,
+  headers: { 
+    "Content-Type": "application/json",
+    "Connection": "close" // Force connection close to prevent keep-alive issues
+  },
+  timeout: 30000, // Reduced timeout to 30 seconds
+  maxRedirects: 5,
+  // Disable HTTP keep-alive to prevent connection reuse issues
+  httpAgent: new (require('http').Agent)({ 
+    keepAlive: false,
+    maxSockets: 10 
+  }),
+  // Add retry configuration
+  validateStatus: function (status) {
+    return status >= 200 && status < 300;
+  }
 });
 
 // Helper function to calculate time ago
@@ -79,6 +101,7 @@ const makeZabbixRequest = async (authToken, method, params) => {
       headers: { Authorization: `Bearer ${authToken}` },
     }
   );
+  // console.log("trophy-pushing army---------->",response)
   return response.data.result;
 };
 
@@ -167,8 +190,6 @@ app.post(
     try {
       const { triggerid, hostId } = req.body;
 
-      console.log("triggerid----------------->", triggerid);
-
       const latestEvent = await makeZabbixRequest(authToken, "event.get", {
         output: [
           "eventid",
@@ -256,8 +277,6 @@ app.post(
 );
 
 // --------------------------------------------------------------- //
-
-
 
 // Alternative version with even better performance using Promise.all for parallel processing
 app.post(
@@ -454,12 +473,16 @@ async function checkZabbixRecentEvent() {
 
     const currentTimestamp = Math.floor(Date.now() / 1000);
     const currentMinute = currentTimestamp - (currentTimestamp % 60);
-    
+
     // Check for events in the last 2 minutes (120 seconds before current minute)
     const startTime = currentMinute - 120; // 2 minutes ago
     const endTime = currentMinute; // Current minute start
-    
-    console.log(`🔍 Checking events from ${new Date(startTime * 1000).toLocaleString()} to ${new Date(endTime * 1000).toLocaleString()}`);
+
+    console.log(
+      `🔍 Checking events from ${new Date(
+        startTime * 1000
+      ).toLocaleString()} to ${new Date(endTime * 1000).toLocaleString()}`
+    );
 
     const [hosts, allTriggers] = await Promise.all([
       makeZabbixRequest(authToken, "host.get", {
@@ -516,30 +539,40 @@ async function checkZabbixRecentEvent() {
     });
 
     if (!recentEvents?.length) {
-      console.log(`📭 No new events found between ${new Date(startTime * 1000).toLocaleString()} and ${new Date(endTime * 1000).toLocaleString()}`);
+      console.log(
+        `📭 No new events found between ${new Date(
+          startTime * 1000
+        ).toLocaleString()} and ${new Date(endTime * 1000).toLocaleString()}`
+      );
       return;
     }
 
-    console.log(`📨 Found ${recentEvents.length} event(s) in the last 2 minutes`);
+    console.log(
+      `📨 Found ${recentEvents.length} event(s) in the last 2 minutes`
+    );
 
     // Filter out already sent events
-    const newEvents = recentEvents.filter(event => !isEventAlreadySent(event.eventid));
-    
+    const newEvents = recentEvents.filter(
+      (event) => !isEventAlreadySent(event.eventid)
+    );
+
     if (newEvents.length === 0) {
       console.log("📌 All events were already sent, skipping notifications");
       return;
     }
 
-    console.log(`📬 ${newEvents.length} new event(s) to process after duplicate filtering`);
+    console.log(
+      `📬 ${newEvents.length} new event(s) to process after duplicate filtering`
+    );
 
     // Process each new event
     const processedEvents = [];
-    
+
     for (const event of newEvents) {
       const correspondingTrigger = allTriggers.find(
         (t) => t.triggerid === event.objectid
       );
-      
+
       if (!correspondingTrigger) continue;
 
       const triggerHost = correspondingTrigger.hosts[0];
@@ -567,7 +600,7 @@ async function checkZabbixRecentEvent() {
 
     // Send email for each new event
     const emailRecipients = ["tomsmith.net1@gmail.com"];
-    
+
     for (const eventData of processedEvents) {
       try {
         const emailResult = await sendAlertMail({
@@ -575,23 +608,27 @@ async function checkZabbixRecentEvent() {
           alertData: eventData,
           baseUrl: process.env.BASE_URL || "http://localhost:3000",
         });
-        
+
         // Mark event as sent only after successful email send
         markEventAsSent(eventData.eventid);
-        console.log(`📧 Alert sent for event ${eventData.eventid}:`, emailResult);
-        
+        console.log(
+          `📧 Alert sent for event ${eventData.eventid}:`,
+          emailResult
+        );
       } catch (emailError) {
-        console.error(`❌ Failed to send email for event ${eventData.eventid}:`, emailError.message);
+        console.error(
+          `❌ Failed to send email for event ${eventData.eventid}:`,
+          emailError.message
+        );
         // Don't mark as sent if email failed, so it can be retried
       }
     }
 
     // Optional: Log current sent events count for monitoring
     console.log(`📊 Currently tracking ${sentEvents.size} sent events`);
-
   } catch (err) {
     console.error("❌ Cron job error:", err.message);
-  }
+  }7
 }
 
 // Run every minute
@@ -599,7 +636,6 @@ async function checkZabbixRecentEvent() {
 //   console.log("⏰ Running Zabbix event cron job...");
 //   await checkZabbixRecentEvent();
 // });
-
 
 // ------------------------------new cron--------------------------------- //
 
@@ -769,45 +805,45 @@ const formatTimestamp = (unixTimestamp) => {
 // Function to filter data to get 24 points per day (hourly data)
 const filterHourlyData = (data, startTime, endTime) => {
   if (!data || data.length === 0) return [];
-  
+
   const result = [];
   const startDate = new Date(startTime * 1000);
   const endDate = new Date(endTime * 1000);
-  
+
   // Calculate total days
   const totalDays = Math.ceil((endDate - startDate) / (24 * 60 * 60 * 1000));
-  
+
   // For each day, get 24 data points (one per hour)
   for (let day = 0; day < totalDays; day++) {
     const dayStart = new Date(startDate);
     dayStart.setDate(startDate.getDate() + day);
     dayStart.setHours(0, 0, 0, 0);
-    
+
     const dayEnd = new Date(dayStart);
     dayEnd.setHours(23, 59, 59, 999);
-    
+
     // Get data for this day
-    const dayData = data.filter(item => {
+    const dayData = data.filter((item) => {
       const itemTime = new Date(item.clock);
       return itemTime >= dayStart && itemTime <= dayEnd;
     });
-    
+
     if (dayData.length === 0) continue;
-    
+
     // If we have data for this day, select 24 points (one per hour)
     for (let hour = 0; hour < 24; hour++) {
       const hourStart = new Date(dayStart);
       hourStart.setHours(hour, 0, 0, 0);
-      
+
       const hourEnd = new Date(dayStart);
       hourEnd.setHours(hour, 59, 59, 999);
-      
+
       // Find the closest data point to this hour
-      const hourData = dayData.filter(item => {
+      const hourData = dayData.filter((item) => {
         const itemTime = new Date(item.clock);
         return itemTime >= hourStart && itemTime <= hourEnd;
       });
-      
+
       if (hourData.length > 0) {
         // Take the first data point of this hour
         result.push(hourData[0]);
@@ -818,21 +854,28 @@ const filterHourlyData = (data, startTime, endTime) => {
           const closestTime = new Date(closest.clock);
           const targetTime = new Date(hourStart);
           targetTime.setMinutes(30); // Target middle of the hour
-          
-          return Math.abs(currentTime - targetTime) < Math.abs(closestTime - targetTime) ? current : closest;
+
+          return Math.abs(currentTime - targetTime) <
+            Math.abs(closestTime - targetTime)
+            ? current
+            : closest;
         });
-        
-        if (closestData && !result.find(item => item.clock === closestData.clock)) {
+
+        if (
+          closestData &&
+          !result.find((item) => item.clock === closestData.clock)
+        ) {
           result.push(closestData);
         }
       }
     }
   }
-  
+
   // Sort by timestamp and return only unique entries
   return result
-    .filter((item, index, self) => 
-      index === self.findIndex(t => t.clock === item.clock)
+    .filter(
+      (item, index, self) =>
+        index === self.findIndex((t) => t.clock === item.clock)
     )
     .sort((a, b) => new Date(b.clock) - new Date(a.clock))
     .slice(0, totalDays * 24);
@@ -851,20 +894,22 @@ app.post(
     // If filterStatus is off or no dates provided, get latest 10 records
     if (filterStatus === "off" || !startDate || !endDate) {
       timeTo = Math.floor(Date.now() / 1000);
-      timeFrom = timeTo - (24 * 60 * 60); // Last 24 hours for context
+      timeFrom = timeTo - 24 * 60 * 60; // Last 24 hours for context
     } else {
       // Validate date inputs
       const startTime = new Date(startDate);
       const endTime = new Date(endDate);
-      
+
       if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-        throw new Error("Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)");
+        throw new Error(
+          "Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)"
+        );
       }
-      
+
       if (startTime >= endTime) {
         throw new Error("startDate must be before endDate");
       }
-      
+
       timeFrom = Math.floor(startTime.getTime() / 1000);
       timeTo = Math.floor(endTime.getTime() / 1000);
     }
@@ -875,7 +920,10 @@ app.post(
     });
 
     if (!hosts || hosts.length === 0) {
-      throw new Error("No hosts found");
+      return {
+        error:
+          "No hosts found. Please ensure your Zabbix account has access to at least one host.",
+      };
     }
 
     // For each host, get historical data
@@ -890,27 +938,29 @@ app.post(
             sortfield: "name",
           });
 
-          const cpuData = cpuItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [cpuItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: timeTo,
-                sortfield: "clock",
-                sortorder: "DESC",
-                limit: filterStatus === "off" ? 10 : undefined,
-              })
-            : [];
+          const cpuData =
+            cpuItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [cpuItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: timeTo,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                  limit: filterStatus === "off" ? 10 : undefined,
+                })
+              : [];
 
           // Convert CPU clock to human-readable format
-          const formattedCpuData = cpuData.map(item => ({
+          const formattedCpuData = cpuData.map((item) => ({
             ...item,
-            clock: formatTimestamp(item.clock)
+            clock: formatTimestamp(item.clock),
           }));
-          const filteredCpuData = filterStatus === "off" 
-            ? formattedCpuData.slice(0, 10)
-            : filterHourlyData(formattedCpuData, timeFrom, timeTo);
+          const filteredCpuData =
+            filterStatus === "off"
+              ? formattedCpuData.slice(0, 10)
+              : filterHourlyData(formattedCpuData, timeFrom, timeTo);
 
           // Get memory utilization
           const memoryItems = await makeZabbixRequest(authToken, "item.get", {
@@ -919,26 +969,28 @@ app.post(
             search: { key_: "vm.memory.size[pavailable]" },
           });
 
-          const memoryData = memoryItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [memoryItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: timeTo,
-                sortfield: "clock",
-                sortorder: "DESC",
-                limit: filterStatus === "off" ? 10 : undefined,
-              })
-            : [];
+          const memoryData =
+            memoryItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [memoryItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: timeTo,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                  limit: filterStatus === "off" ? 10 : undefined,
+                })
+              : [];
 
-          const formattedMemoryData = memoryData.map(item => ({
+          const formattedMemoryData = memoryData.map((item) => ({
             ...item,
-            clock: formatTimestamp(item.clock)
+            clock: formatTimestamp(item.clock),
           }));
-          const filteredMemoryData = filterStatus === "off" 
-            ? formattedMemoryData.slice(0, 10)
-            : filterHourlyData(formattedMemoryData, timeFrom, timeTo);
+          const filteredMemoryData =
+            filterStatus === "off"
+              ? formattedMemoryData.slice(0, 10)
+              : filterHourlyData(formattedMemoryData, timeFrom, timeTo);
 
           // Get disk utilization
           const diskItems = await makeZabbixRequest(authToken, "item.get", {
@@ -947,26 +999,28 @@ app.post(
             search: { key_: "vfs.fs.dependent.size[/,pused]" },
           });
 
-          const diskData = diskItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [diskItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: timeTo,
-                sortfield: "clock",
-                sortorder: "DESC",
-                limit: filterStatus === "off" ? 10 : undefined,
-              })
-            : [];
+          const diskData =
+            diskItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [diskItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: timeTo,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                  limit: filterStatus === "off" ? 10 : undefined,
+                })
+              : [];
 
-          const formattedDiskData = diskData.map(item => ({
+          const formattedDiskData = diskData.map((item) => ({
             ...item,
-            clock: formatTimestamp(item.clock)
+            clock: formatTimestamp(item.clock),
           }));
-          const filteredDiskData = filterStatus === "off" 
-            ? formattedDiskData.slice(0, 10)
-            : filterHourlyData(formattedDiskData, timeFrom, timeTo);
+          const filteredDiskData =
+            filterStatus === "off"
+              ? formattedDiskData.slice(0, 10)
+              : filterHourlyData(formattedDiskData, timeFrom, timeTo);
 
           return {
             hostid: host.hostid,
@@ -975,7 +1029,7 @@ app.post(
               startDate: startDate || new Date(timeFrom * 1000).toISOString(),
               endDate: endDate || new Date(timeTo * 1000).toISOString(),
               timeFrom,
-              timeTo
+              timeTo,
             },
             dataPointsPerDay: filterStatus === "off" ? 10 : 24,
             cpu: filteredCpuData,
@@ -996,7 +1050,6 @@ app.post(
   })
 );
 
-
 app.post(
   "/api/zabbix/all-utilizations-v3",
   apiRoute(async (authToken, req) => {
@@ -1013,7 +1066,9 @@ app.post(
     const endTime = new Date(endDate);
 
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-      throw new Error("Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)");
+      throw new Error(
+        "Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)"
+      );
     }
 
     if (startTime >= endTime) {
@@ -1032,32 +1087,41 @@ app.post(
         return {
           maxRecords: 30,
           recordsPerDay: Math.floor(30 / days),
-          intervalHours: Math.max(1, Math.floor(24 / Math.floor(30 / days)))
+          intervalHours: Math.max(1, Math.floor(24 / Math.floor(30 / days))),
         };
       } else if (days <= 7) {
         return {
           maxRecords: 35,
           recordsPerDay: 5,
-          intervalHours: Math.floor(24 / 5) // ~4.8 hours, will use 4 hours
+          intervalHours: Math.floor(24 / 5), // ~4.8 hours, will use 4 hours
         };
       } else if (days <= 30) {
         return {
           maxRecords: 40,
           recordsPerDay: Math.max(1, Math.floor(40 / days)),
-          intervalHours: Math.max(1, Math.floor(24 / Math.max(1, Math.floor(40 / days))))
+          intervalHours: Math.max(
+            1,
+            Math.floor(24 / Math.max(1, Math.floor(40 / days)))
+          ),
         };
       } else if (days <= 85) {
         return {
           maxRecords: 50,
           recordsPerDay: Math.max(1, Math.floor(50 / days)),
-          intervalHours: Math.max(6, Math.floor(24 / Math.max(1, Math.floor(50 / days))))
+          intervalHours: Math.max(
+            6,
+            Math.floor(24 / Math.max(1, Math.floor(50 / days)))
+          ),
         };
       } else {
         // 90-180 days
         return {
           maxRecords: 70,
           recordsPerDay: Math.max(1, Math.floor(70 / days)),
-          intervalHours: Math.max(12, Math.floor(24 / Math.max(1, Math.floor(70 / days))))
+          intervalHours: Math.max(
+            12,
+            Math.floor(24 / Math.max(1, Math.floor(70 / days)))
+          ),
         };
       }
     };
@@ -1068,9 +1132,9 @@ app.post(
     // Function to sample data points based on strategy
     const sampleData = (data, strategy) => {
       if (!data || data.length === 0) return [];
-      
+
       const totalRecords = Math.min(data.length, strategy.maxRecords);
-      
+
       if (data.length <= totalRecords) {
         return data;
       }
@@ -1078,18 +1142,21 @@ app.post(
       // Calculate step size for uniform sampling
       const step = Math.floor(data.length / totalRecords);
       const sampledData = [];
-      
+
       for (let i = 0; i < data.length; i += step) {
         if (sampledData.length < totalRecords) {
           sampledData.push(data[i]);
         }
       }
-      
+
       // Ensure we always include the last data point if we haven't reached max records
-      if (sampledData.length < totalRecords && sampledData[sampledData.length - 1] !== data[data.length - 1]) {
+      if (
+        sampledData.length < totalRecords &&
+        sampledData[sampledData.length - 1] !== data[data.length - 1]
+      ) {
         sampledData.push(data[data.length - 1]);
       }
-      
+
       return sampledData.slice(0, totalRecords);
     };
 
@@ -1127,10 +1194,10 @@ app.post(
               sortfield: "clock",
               sortorder: "ASC", // Changed to ASC for chronological order
             });
-            
+
             // Apply sampling strategy
             const sampledCpuData = sampleData(rawCpuData, samplingStrategy);
-            cpuData = sampledCpuData.map(item => ({
+            cpuData = sampledCpuData.map((item) => ({
               ...item,
               clock: formatTimestamp(item.clock),
             }));
@@ -1145,18 +1212,25 @@ app.post(
 
           let memoryData = [];
           if (memoryItems.length > 0) {
-            const rawMemoryData = await makeZabbixRequest(authToken, "trend.get", {
-              output: "extend",
-              itemids: [memoryItems[0].itemid],
-              time_from: timeFrom,
-              time_till: timeTo,
-              sortfield: "clock",
-              sortorder: "ASC", // Changed to ASC for chronological order
-            });
-            
+            const rawMemoryData = await makeZabbixRequest(
+              authToken,
+              "trend.get",
+              {
+                output: "extend",
+                itemids: [memoryItems[0].itemid],
+                time_from: timeFrom,
+                time_till: timeTo,
+                sortfield: "clock",
+                sortorder: "ASC", // Changed to ASC for chronological order
+              }
+            );
+
             // Apply sampling strategy
-            const sampledMemoryData = sampleData(rawMemoryData, samplingStrategy);
-            memoryData = sampledMemoryData.map(item => ({
+            const sampledMemoryData = sampleData(
+              rawMemoryData,
+              samplingStrategy
+            );
+            memoryData = sampledMemoryData.map((item) => ({
               ...item,
               clock: formatTimestamp(item.clock),
             }));
@@ -1171,18 +1245,22 @@ app.post(
 
           let diskData = [];
           if (diskItems.length > 0) {
-            const rawDiskData = await makeZabbixRequest(authToken, "trend.get", {
-              output: "extend",
-              itemids: [diskItems[0].itemid],
-              time_from: timeFrom,
-              time_till: timeTo,
-              sortfield: "clock",
-              sortorder: "ASC", // Changed to ASC for chronological order
-            });
-            
+            const rawDiskData = await makeZabbixRequest(
+              authToken,
+              "trend.get",
+              {
+                output: "extend",
+                itemids: [diskItems[0].itemid],
+                time_from: timeFrom,
+                time_till: timeTo,
+                sortfield: "clock",
+                sortorder: "ASC", // Changed to ASC for chronological order
+              }
+            );
+
             // Apply sampling strategy
             const sampledDiskData = sampleData(rawDiskData, samplingStrategy);
-            diskData = sampledDiskData.map(item => ({
+            diskData = sampledDiskData.map((item) => ({
               ...item,
               clock: formatTimestamp(item.clock),
             }));
@@ -1197,7 +1275,7 @@ app.post(
               timeFrom: timeFrom,
               timeTo: timeTo,
               dayDifference: dayDifference,
-              samplingStrategy: samplingStrategy
+              samplingStrategy: samplingStrategy,
             },
             cpu: cpuData,
             memory: memoryData,
@@ -1210,9 +1288,9 @@ app.post(
               actualRecords: {
                 cpu: cpuData.length,
                 memory: memoryData.length,
-                disk: diskData.length
-              }
-            }
+                disk: diskData.length,
+              },
+            },
           };
         } catch (error) {
           return {
@@ -1222,8 +1300,8 @@ app.post(
             dateRange: {
               startDate: startDate,
               endDate: endDate,
-              dayDifference: dayDifference
-            }
+              dayDifference: dayDifference,
+            },
           };
         }
       })
@@ -1249,7 +1327,9 @@ app.post(
     const endTime = new Date(endDate);
 
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-      throw new Error("Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)");
+      throw new Error(
+        "Invalid date format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)"
+      );
     }
 
     if (startTime >= endTime) {
@@ -1280,18 +1360,19 @@ app.post(
             sortfield: "name",
           });
 
-          const cpuData = cpuItems.length > 0
-            ? await makeZabbixRequest(authToken, "trend.get", {
-                output: "extend",
-                itemids: [cpuItems[0].itemid],
-                time_from: timeFrom,
-                time_till: timeTo,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const cpuData =
+            cpuItems.length > 0
+              ? await makeZabbixRequest(authToken, "trend.get", {
+                  output: "extend",
+                  itemids: [cpuItems[0].itemid],
+                  time_from: timeFrom,
+                  time_till: timeTo,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
-          const formattedCpuData = cpuData.map(item => ({
+          const formattedCpuData = cpuData.map((item) => ({
             ...item,
             clock: formatTimestamp(item.clock),
           }));
@@ -1303,18 +1384,19 @@ app.post(
             search: { key_: "vm.memory.size[pavailable]" },
           });
 
-          const memoryData = memoryItems.length > 0
-            ? await makeZabbixRequest(authToken, "trend.get", {
-                output: "extend",
-                itemids: [memoryItems[0].itemid],
-                time_from: timeFrom,
-                time_till: timeTo,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const memoryData =
+            memoryItems.length > 0
+              ? await makeZabbixRequest(authToken, "trend.get", {
+                  output: "extend",
+                  itemids: [memoryItems[0].itemid],
+                  time_from: timeFrom,
+                  time_till: timeTo,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
-          const formattedMemoryData = memoryData.map(item => ({
+          const formattedMemoryData = memoryData.map((item) => ({
             ...item,
             clock: formatTimestamp(item.clock),
           }));
@@ -1326,18 +1408,19 @@ app.post(
             search: { key_: "vfs.fs.dependent.size[/,pused]" },
           });
 
-          const diskData = diskItems.length > 0
-            ? await makeZabbixRequest(authToken, "trend.get", {
-                output: "extend",
-                itemids: [diskItems[0].itemid],
-                time_from: timeFrom,
-                time_till: timeTo,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const diskData =
+            diskItems.length > 0
+              ? await makeZabbixRequest(authToken, "trend.get", {
+                  output: "extend",
+                  itemids: [diskItems[0].itemid],
+                  time_from: timeFrom,
+                  time_till: timeTo,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
-          const formattedDiskData = diskData.map(item => ({
+          const formattedDiskData = diskData.map((item) => ({
             ...item,
             clock: formatTimestamp(item.clock),
           }));
@@ -1369,7 +1452,6 @@ app.post(
   })
 );
 
-
 // API endpoint to get latest single record for all hosts
 app.post(
   "/api/zabbix/latest-utilizations-v2",
@@ -1398,18 +1480,19 @@ app.post(
             sortfield: "name",
           });
 
-          const cpuData = cpuItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [cpuItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: currentTime,
-                limit: 1,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const cpuData =
+            cpuItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [cpuItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: currentTime,
+                  limit: 1,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
           // Get memory utilization
           const memoryItems = await makeZabbixRequest(authToken, "item.get", {
@@ -1418,18 +1501,19 @@ app.post(
             search: { key_: "vm.memory.size[pavailable]" },
           });
 
-          const memoryData = memoryItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [memoryItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: currentTime,
-                limit: 1,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const memoryData =
+            memoryItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [memoryItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: currentTime,
+                  limit: 1,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
           // Get disk utilization
           const diskItems = await makeZabbixRequest(authToken, "item.get", {
@@ -1438,18 +1522,19 @@ app.post(
             search: { key_: "vfs.fs.dependent.size[/,pused]" },
           });
 
-          const diskData = diskItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [diskItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: currentTime,
-                limit: 1,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const diskData =
+            diskItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [diskItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: currentTime,
+                  limit: 1,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
           return {
             hostid: host.hostid,
@@ -1481,7 +1566,10 @@ app.post(
     });
 
     if (!hosts || hosts.length === 0) {
-      throw new Error("No hosts found");
+      return {
+        error:
+          "No hosts found. Please ensure your Zabbix account has access to at least one host.",
+      };
     }
 
     const currentTime = Math.floor(Date.now() / 1000);
@@ -1497,18 +1585,19 @@ app.post(
             sortfield: "name",
           });
 
-          const cpuData = cpuItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [cpuItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: currentTime,
-                limit: 1,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const cpuData =
+            cpuItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [cpuItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: currentTime,
+                  limit: 1,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
           const memoryItems = await makeZabbixRequest(authToken, "item.get", {
             output: ["itemid", "name", "lastvalue"],
@@ -1516,18 +1605,19 @@ app.post(
             search: { key_: "vm.memory.size[pavailable]" },
           });
 
-          const memoryData = memoryItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [memoryItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: currentTime,
-                limit: 1,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const memoryData =
+            memoryItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [memoryItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: currentTime,
+                  limit: 1,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
           const diskItems = await makeZabbixRequest(authToken, "item.get", {
             output: ["itemid", "name", "lastvalue"],
@@ -1535,33 +1625,34 @@ app.post(
             search: { key_: "vfs.fs.dependent.size[/,pused]" },
           });
 
-          const diskData = diskItems.length > 0
-            ? await makeZabbixRequest(authToken, "history.get", {
-                output: "extend",
-                itemids: [diskItems[0].itemid],
-                history: 0,
-                time_from: timeFrom,
-                time_till: currentTime,
-                limit: 1,
-                sortfield: "clock",
-                sortorder: "DESC",
-              })
-            : [];
+          const diskData =
+            diskItems.length > 0
+              ? await makeZabbixRequest(authToken, "history.get", {
+                  output: "extend",
+                  itemids: [diskItems[0].itemid],
+                  history: 0,
+                  time_from: timeFrom,
+                  time_till: currentTime,
+                  limit: 1,
+                  sortfield: "clock",
+                  sortorder: "DESC",
+                })
+              : [];
 
           return {
             hostid: host.hostid,
             hostname: host.name,
-            cpu: cpuData.map(item => ({
+            cpu: cpuData.map((item) => ({
               ...item,
-              clock: formatTimestamp(item.clock)
+              clock: formatTimestamp(item.clock),
             })),
-            memory: memoryData.map(item => ({
+            memory: memoryData.map((item) => ({
               ...item,
-              clock: formatTimestamp(item.clock)
+              clock: formatTimestamp(item.clock),
             })),
-            disk: diskData.map(item => ({
+            disk: diskData.map((item) => ({
               ...item,
-              clock: formatTimestamp(item.clock)
+              clock: formatTimestamp(item.clock),
             })),
           };
         } catch (error) {
@@ -1577,6 +1668,119 @@ app.post(
     return results;
   })
 );
+
+// Create HOST Group API
+app.post(
+  "/api/zabbix/hostgroup-create",
+  apiRoute(async (authToken, req) => {
+    const { name } = req.body;
+
+    if (!name) {
+      throw new Error("Host group name is required");
+    }
+
+    const response = await makeZabbixRequest(authToken, "hostgroup.create", {
+      name,
+    });
+
+    console.log("response------------->",response)
+    return response;
+  })
+);
+
+// GET /api/zabbix/hostgroup-list
+app.get(
+  "/api/zabbix/hostgroup-list",
+  apiRoute(async (authToken, req) => {
+    const response = await makeZabbixRequest(authToken, "hostgroup.get", {
+      output: ["groupid", "name"],
+      sortfield: "name",
+    });
+
+    return response;
+  })
+);
+
+// Create Host API
+app.post(
+  "/api/zabbix/host-create",
+  apiRoute(async (authToken, req) => {
+    const { hostName, ip, groupid, templateid } = req.body;
+
+    if (!hostName || !ip || !groupid || !templateid) {
+      throw new Error(
+        "Missing required fields: hostName, ip, groupid, templateid"
+      );
+    }
+
+    // Prepare the payload for host.create
+    const newHostPayload = {
+      host: hostName,
+      interfaces: [
+        {
+          type: 1, // Agent
+          main: 1,
+          useip: 1,
+          ip: ip,
+          dns: "",
+          port: "10050",
+        },
+      ],
+      groups: [
+        {
+          groupid: groupid,
+        },
+      ],
+      templates: [
+        {
+          templateid: templateid,
+        },
+      ],
+      inventory_mode: 0, // Manual inventory
+    };
+
+    const response = await makeZabbixRequest(
+      authToken,
+      "host.create",
+      newHostPayload
+    );
+    return response;
+  })
+);
+
+// POST /api/zabbix/template-create
+app.post(
+  "/api/zabbix/template-create",
+  apiRoute(async (authToken, req) => {
+    const { templateName, groupid } = req.body;
+
+    if (!templateName || !groupid) {
+      throw new Error("templateName and groupid are required");
+    }
+
+    const result = await makeZabbixRequest(authToken, "template.create", {
+      host: templateName, // Template name
+      groups: [{ groupid: groupid }],
+    });
+
+    return result;
+  })
+);
+
+// GET /api/zabbix/template-list
+app.get(
+  "/api/zabbix/template-list",
+  apiRoute(async (authToken, req) => {
+    const result = await makeZabbixRequest(authToken, "template.get", {
+      output: ["templateid", "name", "host"],
+      sortfield: "name"
+    });
+
+    return result;
+  })
+);
+
+
 
 
 // Server startup
